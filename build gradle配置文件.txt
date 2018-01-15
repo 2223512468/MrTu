@@ -1,0 +1,162 @@
+build.gradle配置参数详解
+
+//声明是Android程序
+
+apply plugin: 'com.android.application'
+
+android {
+//程序在编译的时候会检查lint，有任何错误提示会停止build，我们可以关闭这个开关
+    lintOptions {
+        abortOnError false  
+        //即使报错也不会停止打包
+        checkReleaseBuilds false  
+        //打包release版本的时候进行检测
+    }
+
+    compileSdkVersion 23 
+    //编译sdk的版本，也就是API Level，例如API-19、API-20、API-21等等。
+    buildToolsVersion '23.0.2' 
+    //build tools的版本，其中包括了打包工具aapt、dx等等。
+    //这个工具的目录位于你的sdk目录/build-tools/下
+
+    aaptOptions.cruncherEnabled = false
+    aaptOptions.useNewCruncher = false
+    //关闭Android Studio的PNG合法性检查的
+
+    defaultConfig {
+        applicationId "com.xiaopao.activity" 
+        //应用包名
+        minSdkVersion 15 
+        //最小sdk版本，如果设备小于这个版本或者大于
+        //maxSdkVersion(一般不用)将无法安装这个应用
+        targetSdkVersion 22 
+        //目标sdk版本，如果设备等于这个版本那么android平台
+        //就不进行兼容性检查，运行效率会高一点
+        versionCode 15 
+        //版本更新了几次，第一版应用是1，以后每更新一次加1
+        versionName '1.411'
+        //版本信息，这个会显示给用户，就是用户看到的版本号
+        archivesBaseName = "weshare-$versionName" 
+        //指定打包成Jar文件时候的文件名称
+        ndk {
+             moduleName "xiaopaowifisafe"                   //设置库(so)文件名称
+            ldLibs "log", "z", "m", "jnigraphics", "android"
+            //引入库，比如要用到的__android_log_print
+            abiFilters "armeabi", "x86", "armeabi-v7a"      //, "x86"  显示指定支持的ABIs
+            cFlags "-std=c++11 -fexceptions"                // C++11
+            stl "gnustl_static"
+        }
+        multiDexEnabled true  
+        //当方法数超过65535(方法的索引使用的是一个short值，
+        //而short最大值是65535)的时候允许打包成多个dex文件，动态加载dex。这里面坑很深啊
+    }
+
+    //默认的一些文件路径的配置
+    sourceSets {   
+        main {
+            assets.srcDirs = ['assets']    //资源文件
+            jni.srcDirs 'src/main/jni'     //jni文件
+            jniLibs.srcDir 'src/main/jniLibs' //jni库
+        }
+    }
+    //multiDex的一些相关配置，这样配置可以让你的编译速度更快
+    dexOptions {
+        preDexLibraries = false  
+        //让它不要对Lib做preDexing
+        incremental true         
+        //开启incremental dexing,优化编译效率，这个功能android studio默认是关闭的。
+        javaMaxHeapSize "4g"     //增加java堆内存大小
+    }
+    buildTypes {
+        release { //release版本的配置
+            zipAlignEnabled true  //是否支持zip
+            shrinkResources true  // 移除无用的resource文件
+            minifyEnabled true    //是否进行混淆
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro' 
+            //release的Proguard默认为Module下的proguard-rules.pro文件.
+            debuggable false  //是否支持调试
+            //ndk的一些配置
+            ndk {
+                // cFlags "-std=c++11 -fexceptions -O3 -D__RELEASE__" // C++11
+                // platformVersion  = "19"
+                moduleName "xiaopaowifisafe" //设置库(so)文件名称
+                ldLibs "log", "z", "m", "jnigraphics", "android"
+                //引入库，比如要用到的__android_log_print
+                abiFilters "armeabi", "x86", "armeabi-v7a"//, "x86"
+                cFlags "-std=c++11 -fexceptions" // C++11
+                stl "gnustl_static"
+            }
+            //采用动态替换字符串的方式生成不同的release.apk
+            applicationVariants.all { variant ->
+                variant.outputs.each { output ->
+                    def outputFile = output.outputFile
+                    if (outputFile != null && outputFile.name.endsWith('release.apk')) {
+                        def timeStamp = new Date().format('yyyyMMddHH');
+                        def fileName = "WeShare-${defaultConfig.versionName}" + "-" + timeStamp + "-lj-" + ".apk";
+                        output.outputFile = file("${outputFile.parent}/${fileName}")
+                    }
+                }
+            }
+            jniDebuggable false  //关闭jni调试
+        }
+        debug {//debug版本的配置
+            minifyEnabled false
+            zipAlignEnabled true          
+            shrinkResources true // 移除无用的resource文件
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable true
+//          jniDebuggable true
+            ndk {
+                cFlags "-std=c++11 -fexceptions -g -D __DEBUG__" // C++11
+            }
+            jniDebuggable true
+        }
+    }
+    compileOptions {
+    //在这里你可以进行 Java 的版本配置，
+    //以便使用对应版本的一些新特性
+    }
+    productFlavors {
+    //在这里你可以设置你的产品发布的一些东西，
+    //比如你现在一共软件需要发布到不同渠道，
+    //且不同渠道中的包名不同，那么可以在此进行配置；
+    //甚至可以设置不同的 AndroidManifest.xml 文件。
+        xiaopao {
+        }
+        googlePlay {
+        }
+        solo {
+        }
+    }
+    productFlavors.all {
+        flavor -> flavor.manifestPlaceholders = [UMENG_CHANNEL_VALUE: name]
+    }
+    //所谓ProductFlavors其实就是可定义的产品特性，
+    //配合 manifest merger 使用的时候就可以达成在一次编译
+    //过程中产生多个具有自己特性配置的版本。
+
+    //上面这个配置的作用就是，为每个渠道包产生不同的 UMENG_CHANNEL_VALUE 的值。
+}
+//一些依赖的框架
+dependencies {
+    compile 'com.jakewharton:butterknife:7.0.1'
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:support-v4:23.4.0'
+    compile 'com.github.pwittchen:reactivenetwork:0.1.3'
+    compile 'de.hdodenhof:circleimageview:2.0.0'
+    compile 'com.android.support:design:23.4.0'
+    compile 'pl.tajchert:waitingdots:0.2.0'
+}
+//声明是要使用谷歌服务框架
+apply plugin: 'com.google.gms.google-services'
+
+//第三方依赖库的本地缓存路径
+task showMeCache << {
+    configurations.compile.each { println it }
+}
+//使用maven仓库。android有两个标准的library文件服务器，一个jcenter一个maven。两者毫无关系。
+//jcenter有的maven可能没有，反之亦然。
+//如果要使用jcenter的话就把mavenCentral()替换成jcenter()
+repositories {
+    mavenCentral()
+}

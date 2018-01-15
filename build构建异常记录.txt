@@ -1,0 +1,25 @@
+一、AndroidStudio导入项目一直Building解决方案
+1.随便找一个你能运行的as项目
+2.打开gradle-wrapper.properties，文件目录：项目/gradle/wrapper/gradle-wrapper.properties
+3.复制distributionUrl这一整行的内容，eg: distributionUrl=https\://services.gradle.org/distributions/gradle-2.4-all.zip
+4.打开你要导入的项目的gradle-wrapper.properties，具体步骤与步骤2相同
+5.把步骤3复制的内容，替换你要导入的项目的gradle-wrapper.properties文件的distributionUrl这一行
+6.再重启as，导入项目就可以了
+
+AndroidStudio导入项目一直卡在Building gradle project info，实际上是因为你导入的这个项目使用的gradle与你已经拥有的gradle版本不一致，导致需要下载该项目需要的gradle版本,会一直卡住，直至下载完成。
+
+其实还有解决方案是下载对应的gradle版本然后复制到本地，或者设置翻墙让他自己下载
+
+
+二、如何解决Unsupported major.minor version 52.0问题？
+
+简单来说，就是java的编译环境版本太低，java 8 class file的版本是52，Java 7虚拟机只能支持到51。所以需要升级到java 8 vm才行。
+
+三、Error: Failed to find Build Tools revision 24.0.2
+    1、查看gradle,看版本
+    2、确定已有的编译工具版本，如 25.0.0
+    3、修改gradle,重新编译，成功 buildToolsVersion='26.0.2'
+四、This Gradle plugin requires a newer IDE able to request IDE model level 3.For Android Studio this means version 3.0+
+    这个Gradle插件需要一个更新的IDE来请求IDE模型级别3。对于Android Studio来说，这意味着版本3.0 +
+    当前的gradle插件需要一个级别在3及以上的更新的IDE（即AndroidStudio）版本，也就是说当前版本的AndroidStudio不能满足这个项目
+    的要求，需要更新AndroidStudio在3.0+。所以更新一下AndroidStudio的版本就行了。

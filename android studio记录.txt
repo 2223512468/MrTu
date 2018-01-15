@@ -1,0 +1,6 @@
+一、android studio 版本更新
+    单击Setting （设置），弹出default setting(默认设置)对话框；
+    appearance&behavior中选择system settings系统设置；	
+	展开system settings系统设置，选择 updates(更新)选项；
+	选择dev chanel开发者版本 更新渠道，stable是稳定版本
+	单击check now检查当前是否有更新的版本
